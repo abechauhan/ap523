@@ -5120,7 +5120,7 @@ void init_idle(struct task_struct *idle, int cpu)
 
 	ftrace_graph_init_idle_task(idle, cpu);
 #ifdef CONFIG_SMP
-	sprintf(idle->comm, "%s/%d", INIT_TASK_COMM, cpu);
+	sprintf(idle->comm, "%s/%d", INIT_TASK_COMM_BFS, cpu);
 #endif
 }
 
