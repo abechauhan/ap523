@@ -83,7 +83,7 @@
 #include <asm/paravirt.h>
 #endif
 
-#include "sched.h"
+#include "wrapper_sched.h"
 #include "../workqueue_internal.h"
 #include "../smpboot.h"
 
@@ -95,7 +95,7 @@ DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 static void update_rq_clock_task(struct rq *rq, s64 delta);
 
-void update_rq_clock(struct rq *rq)
+void update_rq_clock_cfs(struct rq *rq)
 {
 	s64 delta;
 
@@ -1781,7 +1781,9 @@ void sched_ttwu_pending(void)
 	struct llist_node *llist = llist_del_all(&rq->wake_list);
 	struct task_struct *p;
 	unsigned long flags;
-
+        
+        if (sch_alg == 1)
+                return;
 	if (!llist)
 		return;
 
@@ -2687,11 +2689,11 @@ unsigned long nr_running(void)
  *
  * - in a loop with very short iterations (e.g. a polling loop)
  */
-bool single_task_running(void)
+bool single_task_running_cfs(void)
 {
 	return raw_rq()->nr_running == 1;
 }
-EXPORT_SYMBOL(single_task_running);
+EXPORT_SYMBOL(single_task_running_cfs);
 
 unsigned long long nr_context_switches(void)
 {
@@ -7299,7 +7301,7 @@ LIST_HEAD(task_groups);
 
 DECLARE_PER_CPU(cpumask_var_t, load_balance_mask);
 
-void __init sched_init(void)
+void __init sched_init_cfs(void)
 {
 	int i, j;
 	unsigned long alloc_size = 0, ptr;

@@ -1,5 +1,6 @@
 #include <linux/sched.h>
 #include <linux/cpuidle.h>
+#include "sched.h"
 
 #ifndef BFS_SCHED_H
 #define BFS_SCHED_H
@@ -8,6 +9,9 @@
  * This is the main, per-CPU runqueue data structure.
  * This data should only be modified by the local cpu.
  */
+
+/* Added as super structure to sched.h - Abhishek*/
+#if 0
 struct rq {
 	struct task_struct *curr, *idle, *stop;
 	struct mm_struct *prev_mm;
@@ -90,11 +94,11 @@ struct rq {
 	struct cpuidle_state *idle_state;
 #endif
 };
-
+#endif
 #ifdef CONFIG_SMP
 struct rq *cpu_rq(int cpu);
 #endif
-
+#if 0
 #ifndef CONFIG_SMP
 extern struct rq *uprq;
 #define cpu_rq(cpu)	(uprq)
@@ -107,7 +111,10 @@ DECLARE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 #define this_rq()		this_cpu_ptr(&runqueues)
 #define raw_rq()		raw_cpu_ptr(&runqueues)
 #endif /* CONFIG_SMP */
+#endif
 
+/* Redefined */
+#if 0
 static inline u64 __rq_clock_broken(struct rq *rq)
 {
 	return READ_ONCE(rq->clock);
@@ -124,7 +131,7 @@ static inline u64 rq_clock_task(struct rq *rq)
 	lockdep_assert_held(rq->grq_lock);
 	return rq->clock_task;
 }
-
+#endif
 extern struct mutex sched_domains_mutex;
 
 #define rcu_dereference_check_sched_domain(p) \
@@ -141,19 +148,14 @@ extern struct mutex sched_domains_mutex;
 #define for_each_domain(cpu, __sd) \
 	for (__sd = rcu_dereference_check_sched_domain(cpu_rq(cpu)->sd); __sd; __sd = __sd->parent)
 
-static inline void sched_ttwu_pending(void) { }
-
-static inline int task_on_rq_queued(struct task_struct *p)
-{
-	return p->on_rq;
-}
-
 #ifdef CONFIG_SMP
 
 extern void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask);
 
 #endif
 
+/* Redefinition */
+#if 0
 #ifdef CONFIG_CPU_IDLE
 static inline void idle_set_state(struct rq *rq,
 				  struct cpuidle_state *idle_state)
@@ -176,5 +178,6 @@ static inline struct cpuidle_state *idle_get_state(struct rq *rq)
 {
 	return NULL;
 }
+#endif
 #endif
 #endif /* BFS_SCHED_H */

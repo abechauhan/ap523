@@ -1,4 +1,5 @@
-
+#ifndef LOCAL_SCHED_H
+#define LOCAL_SCHED_H
 #include <linux/sched.h>
 #include <linux/sched/sysctl.h>
 #include <linux/sched/rt.h>
@@ -28,7 +29,7 @@ extern atomic_long_t calc_load_tasks;
 
 extern void calc_global_load_tick(struct rq *this_rq);
 extern long calc_load_fold_active(struct rq *this_rq);
-
+extern int sch_alg;
 #ifdef CONFIG_SMP
 extern void update_cpu_load_active(struct rq *this_rq);
 #else
@@ -684,6 +685,50 @@ struct rq {
 	/* Must be inspected within a rcu lock section */
 	struct cpuidle_state *idle_state;
 #endif
+        /* BFS RQ */
+	/* Pointer to grq spinlock */
+	raw_spinlock_t *grq_lock;
+
+	/* Stored data about rq->curr to work outside grq lock */
+	u64 rq_deadline;
+	unsigned int rq_policy;
+	int rq_time_slice;
+	u64 rq_last_ran;
+	int rq_prio;
+	bool rq_running; /* There is a task running */
+	int soft_affined; /* Running or queued tasks with this set as their rq */
+#ifdef CONFIG_SMT_NICE
+	struct mm_struct *rq_mm;
+	int rq_smt_bias; /* Policy/nice level bias across smt siblings */
+#endif
+	/* Accurate timekeeping data */
+	u64 timekeep_clock;
+	unsigned long user_pc, nice_pc, irq_pc, softirq_pc, system_pc,
+		iowait_pc, idle_pc;
+
+#ifdef CONFIG_SMP
+	int cpu;		/* cpu of this runqueue */
+	bool online;
+	bool scaling; /* This CPU is managed by a scaling CPU freq governor */
+	struct task_struct *sticky_task;
+
+	struct root_domain *rd;
+	struct sched_domain *sd;
+	int *cpu_locality; /* CPU relative cache distance */
+#ifdef CONFIG_SCHED_SMT
+	bool (*siblings_idle)(int cpu);
+	/* See if all smt siblings are idle */
+#endif /* CONFIG_SCHED_SMT */
+#ifdef CONFIG_SCHED_MC
+	bool (*cache_idle)(int cpu);
+	/* See if all cache siblings are idle */
+#endif /* CONFIG_SCHED_MC */
+	u64 last_niffy; /* Last time this RQ updated grq.niffies */
+#endif /* CONFIG_SMP */
+	u64 old_clock, last_tick;
+	bool dither;
+
+        /* BFS RQ */
 };
 
 static inline int cpu_of(struct rq *rq)
@@ -1044,6 +1089,8 @@ static inline int task_running(struct rq *rq, struct task_struct *p)
 
 static inline int task_on_rq_queued(struct task_struct *p)
 {
+        if (sch_alg == 1)
+                return p->on_rq;
 	return p->on_rq == TASK_ON_RQ_QUEUED;
 }
 
@@ -1760,3 +1807,4 @@ static inline u64 irq_time_read(int cpu)
 }
 #endif /* CONFIG_64BIT */
 #endif /* CONFIG_IRQ_TIME_ACCOUNTING */
+#endif

@@ -1,4 +1,5 @@
-
+#ifndef SCHED_STATS_H
+#define SCHED_STATS_H
 #ifdef CONFIG_SCHEDSTATS
 
 /*
@@ -260,3 +261,5 @@ static inline void account_group_exec_runtime(struct task_struct *tsk,
 
 	atomic64_add(ns, &cputimer->cputime_atomic.sum_exec_runtime);
 }
+#endif
+
