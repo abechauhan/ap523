@@ -235,9 +235,11 @@ static struct global_rq grq;
 static DEFINE_MUTEX(sched_hotcpu_mutex);
 
 /* cpus with isolated domains */
+#if 0
 cpumask_var_t cpu_isolated_map;
 
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
+#endif
 #ifdef CONFIG_SMP
 struct rq *cpu_rq(int cpu)
 {
@@ -1162,11 +1164,12 @@ void resched_task(struct task_struct *p)
  *
  * Return: 1 if the task is currently executing. 0 otherwise.
  */
+#if 0
 inline int task_curr(const struct task_struct *p)
 {
 	return cpu_curr(task_cpu(p)) == p;
 }
-
+#endif
 #ifdef CONFIG_SMP
 struct migration_req {
 	struct task_struct *task;
@@ -1642,25 +1645,25 @@ static void try_to_wake_up_local(struct task_struct *p)
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
-int wake_up_process(struct task_struct *p)
+int wake_up_process_bfs(struct task_struct *p)
 {
 	WARN_ON(task_is_stopped_or_traced(p));
 	return try_to_wake_up(p, TASK_NORMAL, 0);
 }
-EXPORT_SYMBOL(wake_up_process);
+EXPORT_SYMBOL(wake_up_process_bfs);
 
-int wake_up_state(struct task_struct *p, unsigned int state)
+
+int wake_up_state_bfs(struct task_struct *p, unsigned int state)
 {
 	return try_to_wake_up(p, state, 0);
 }
-
 static void time_slice_expired(struct task_struct *p);
 
 /*
  * Perform scheduler related setup for a newly forked process p.
  * p is forked by current.
  */
-int sched_fork(unsigned long __maybe_unused clone_flags, struct task_struct *p)
+int sched_fork_bfs(unsigned long __maybe_unused clone_flags, struct task_struct *p)
 {
 #ifdef CONFIG_PREEMPT_NOTIFIERS
 	INIT_HLIST_HEAD(&p->preempt_notifiers);
@@ -1721,7 +1724,7 @@ int sched_fork(unsigned long __maybe_unused clone_flags, struct task_struct *p)
  * that must be done for every newly created context, then puts the task
  * on the runqueue and wakes it.
  */
-void wake_up_new_task(struct task_struct *p)
+void wake_up_new_task_bfs(struct task_struct *p)
 {
 	struct task_struct *parent;
 	unsigned long flags;
@@ -1962,12 +1965,11 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 	}
 	return rq;
 }
-#if 0
 /**
  * schedule_tail - first thing a freshly forked thread must call.
  * @prev: the thread we just switched away from.
  */
-asmlinkage __visible void schedule_tail(struct task_struct *prev)
+asmlinkage __visible void schedule_tail_bfs(struct task_struct *prev)
 	__releases(grq.lock)
 {
 	struct rq *rq;
@@ -1980,7 +1982,6 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
 	if (current->set_child_tid)
 		put_user(task_pid_vnr(current), current->set_child_tid);
 }
-#endif
 /*
  * context_switch - switch to the new MM and the new thread's register state.
  */
@@ -2028,14 +2029,14 @@ context_switch(struct rq *rq, struct task_struct *prev,
 }
 
 /*
- * nr_running, nr_uninterruptible and nr_context_switches:
+ * nr_running, nr_uninterruptible and nr_context_switches_bfs:
  *
  * externally visible scheduler statistics: current number of runnable
  * threads, total number of context switches performed since bootup. All are
  * measured without grabbing the grq lock but the occasional inaccurate result
  * doesn't matter so long as it's positive.
  */
-unsigned long nr_running(void)
+unsigned long nr_running_bfs(void)
 {
 	long nr = grq.nr_running;
 
@@ -2075,7 +2076,7 @@ bool single_task_running_bfs(void)
 }
 EXPORT_SYMBOL(single_task_running_bfs);
 
-unsigned long long nr_context_switches(void)
+unsigned long long nr_context_switches_bfs(void)
 {
 	long long ns = grq.nr_switches;
 
@@ -2085,7 +2086,7 @@ unsigned long long nr_context_switches(void)
 	return (unsigned long long)ns;
 }
 
-unsigned long nr_iowait(void)
+unsigned long nr_iowait_bfs(void)
 {
 	unsigned long i, sum = 0;
 
@@ -2095,7 +2096,7 @@ unsigned long nr_iowait(void)
 	return sum;
 }
 
-unsigned long nr_iowait_cpu(int cpu)
+unsigned long nr_iowait_cpu_bfs(int cpu)
 {
 	struct rq *this = cpu_rq(cpu);
 	return atomic_read(&this->nr_iowait);
@@ -2103,12 +2104,13 @@ unsigned long nr_iowait_cpu(int cpu)
 
 unsigned long nr_active(void)
 {
-	return nr_running() + nr_uninterruptible();
+	return nr_running_bfs() + nr_uninterruptible();
 }
 
 /* Beyond a task running on this CPU, load is equal everywhere on BFS, so we
  * base it on the number of running or queued tasks with their ->rq pointer
  * set to this cpu as being the CPU they're more likely to run on. */
+#if 0
 void get_iowait_load(unsigned long *nr_waiters, unsigned long *load)
 {
 	struct rq *rq = this_rq();
@@ -2116,6 +2118,7 @@ void get_iowait_load(unsigned long *nr_waiters, unsigned long *load)
 	*nr_waiters = atomic_read(&rq->nr_iowait);
 	*load = rq->soft_affined;
 }
+#endif
 static unsigned long calc_load_update_bfs;
 #if 0
 /* Variables and functions for calc_load */
@@ -2148,7 +2151,7 @@ calc_load(unsigned long load, unsigned long exp, unsigned long active)
 /*
  * calc_load - update the avenrun load estimates every LOAD_FREQ seconds.
  */
-void calc_global_load(unsigned long ticks)
+void calc_global_load_bfs(unsigned long ticks)
 {
 	long active;
 
@@ -2163,11 +2166,13 @@ void calc_global_load(unsigned long ticks)
 	calc_load_update_bfs = jiffies + LOAD_FREQ;
 }
 
+#if 0
 DEFINE_PER_CPU(struct kernel_stat, kstat);
 DEFINE_PER_CPU(struct kernel_cpustat, kernel_cpustat);
 
 EXPORT_PER_CPU_SYMBOL(kstat);
 EXPORT_PER_CPU_SYMBOL(kernel_cpustat);
+#endif
 
 #ifdef CONFIG_IRQ_TIME_ACCOUNTING
 
@@ -2382,7 +2387,7 @@ static __always_inline bool steal_account_process_tick(void)
 		steal_ct = nsecs_to_cputime(steal);
 		this_rq()->prev_steal_time += cputime_to_nsecs(steal_ct);
 
-		account_steal_time(steal_ct);
+		account_steal_time_bfs(steal_ct);
 		return steal_ct;
 	}
 #endif
@@ -2655,8 +2660,7 @@ static inline u64 do_task_delta_exec(struct task_struct *p, struct rq *rq)
  * accounted yet.
  *
  */
-#if 0
-unsigned long long task_sched_runtime(struct task_struct *p)
+unsigned long long task_sched_runtime_bfs(struct task_struct *p)
 {
 	unsigned long flags;
 	struct rq *rq;
@@ -2684,16 +2688,7 @@ unsigned long long task_sched_runtime(struct task_struct *p)
 
 	return ns;
 }
-#endif
 /* Compatibility crap */
-void account_user_time(struct task_struct *p, cputime_t cputime,
-		       cputime_t cputime_scaled)
-{
-}
-
-void account_idle_time(cputime_t cputime)
-{
-}
 
 /*
  * Account guest cpu time to a process.
@@ -2753,7 +2748,7 @@ void __account_system_time(struct task_struct *p, cputime_t cputime,
  * @cputime_scaled: cputime scaled by cpu frequency
  * This is for guest only now.
  */
-void account_system_time(struct task_struct *p, int hardirq_offset,
+void account_system_time_bfs(struct task_struct *p, int hardirq_offset,
 			 cputime_t cputime, cputime_t cputime_scaled)
 {
 
@@ -2765,7 +2760,7 @@ void account_system_time(struct task_struct *p, int hardirq_offset,
  * Account for involuntary wait time.
  * @steal: the cpu time spent in involuntary wait
  */
-void account_steal_time(cputime_t cputime)
+void account_steal_time_bfs(cputime_t cputime)
 {
 	u64 *cpustat = kcpustat_this_cpu->cpustat;
 
@@ -2776,7 +2771,7 @@ void account_steal_time(cputime_t cputime)
  * Account for idle time.
  * @cputime: the cpu time spent in idle wait
  */
-static void account_idle_times(cputime_t cputime)
+static void account_idle_times_bfs(cputime_t cputime)
 {
 	u64 *cpustat = kcpustat_this_cpu->cpustat;
 	struct rq *rq = this_rq();
@@ -2786,10 +2781,9 @@ static void account_idle_times(cputime_t cputime)
 	else
 		cpustat[CPUTIME_IDLE] += (__force u64)cputime;
 }
-
 #ifndef CONFIG_VIRT_CPU_ACCOUNTING_NATIVE
 
-void account_process_tick(struct task_struct *p, int user_tick)
+void account_process_tick_bfs(struct task_struct *p, int user_tick)
 {
 }
 
@@ -2798,18 +2792,18 @@ void account_process_tick(struct task_struct *p, int user_tick)
  * @p: the process from which the cpu time has been stolen
  * @ticks: number of stolen ticks
  */
-void account_steal_ticks(unsigned long ticks)
+void account_steal_ticks_bfs(unsigned long ticks)
 {
-	account_steal_time(jiffies_to_cputime(ticks));
+	account_steal_time_bfs(jiffies_to_cputime(ticks));
 }
 
 /*
  * Account multiple ticks of idle time.
  * @ticks: number of stolen ticks
  */
-void account_idle_ticks(unsigned long ticks)
+void account_idle_ticks_bfs(unsigned long ticks)
 {
-	account_idle_times(jiffies_to_cputime(ticks));
+	account_idle_times_bfs(jiffies_to_cputime(ticks));
 }
 #endif
 
@@ -2943,7 +2937,7 @@ static void task_running_tick(struct rq *rq)
  * We call it with interrupts disabled. The data modified is all
  * local to struct rq so we don't need to grab grq lock.
  */
-void scheduler_tick(void)
+void scheduler_tick_bfs(void)
 {
 	int cpu __maybe_unused = smp_processor_id();
 	struct rq *rq = cpu_rq(cpu);
@@ -3422,7 +3416,6 @@ static void __sched __schedule(void)
 	bool deactivate = false;
 	struct rq *rq;
 	int cpu;
-
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
 	rcu_note_context_switch();
@@ -3573,7 +3566,7 @@ static inline void sched_submit_work(struct task_struct *tsk)
 		blk_schedule_flush_plug(tsk);
 }
 
-asmlinkage __visible void __sched schedule(void)
+asmlinkage __visible void __sched schedule_bfs(void)
 {
 	struct task_struct *tsk = current;
 
@@ -3585,7 +3578,7 @@ asmlinkage __visible void __sched schedule(void)
 	} while (need_resched());
 }
 
-EXPORT_SYMBOL(schedule);
+EXPORT_SYMBOL(schedule_bfs);
 
 #ifdef CONFIG_CONTEXT_TRACKING
 asmlinkage __visible void __sched schedule_user(void)
@@ -3611,13 +3604,14 @@ asmlinkage __visible void __sched schedule_user(void)
  *
  * Returns with preemption disabled. Note: preempt_count must be 1
  */
+#if 0
 void __sched schedule_preempt_disabled(void)
 {
 	sched_preempt_enable_no_resched();
 	schedule();
 	preempt_disable();
 }
-
+#endif
 static void __sched notrace preempt_schedule_common(void)
 {
 	do {
@@ -3704,6 +3698,7 @@ EXPORT_SYMBOL_GPL(preempt_schedule_notrace);
  * Note, that this is called and return with irqs disabled. This will
  * protect us against recursive calling from irq.
  */
+#if 0
 asmlinkage __visible void __sched preempt_schedule_irq(void)
 {
 	enum ctx_state prev_state;
@@ -3723,14 +3718,14 @@ asmlinkage __visible void __sched preempt_schedule_irq(void)
 
 	exception_exit(prev_state);
 }
+#endif
 
-int default_wake_function(wait_queue_t *curr, unsigned mode, int wake_flags,
+int default_wake_function_bfs(wait_queue_t *curr, unsigned mode, int wake_flags,
 			  void *key)
 {
 	return try_to_wake_up(curr->private, mode, wake_flags);
 }
-EXPORT_SYMBOL(default_wake_function);
-
+EXPORT_SYMBOL(default_wake_function_bfs);
 #ifdef CONFIG_RT_MUTEXES
 
 /*
@@ -3744,7 +3739,7 @@ EXPORT_SYMBOL(default_wake_function);
  * Used by the rt_mutex code to implement priority inheritance
  * logic. Call site only calls if the priority of the task changed.
  */
-void rt_mutex_setprio(struct task_struct *p, int prio)
+void rt_mutex_setprio_bfs(struct task_struct *p, int prio)
 {
 	unsigned long flags;
 	int queued, oldprio;
@@ -3800,7 +3795,7 @@ static inline void adjust_deadline(struct task_struct *p, int new_prio)
 	p->deadline += static_deadline_diff(new_prio) - task_deadline_diff(p);
 }
 
-void set_user_nice(struct task_struct *p, long nice)
+void set_user_nice_bfs(struct task_struct *p, long nice)
 {
 	int queued, new_static, old_static;
 	unsigned long flags;
@@ -3845,7 +3840,7 @@ void set_user_nice(struct task_struct *p, long nice)
 out_unlock:
 	task_grq_unlock(&flags);
 }
-EXPORT_SYMBOL(set_user_nice);
+EXPORT_SYMBOL(set_user_nice_bfs);
 
 /*
  * can_nice - check if a task can reduce its nice value
@@ -3871,6 +3866,7 @@ int can_nice(const struct task_struct *p, const int nice)
  * sys_setpriority is a more generic, but much slower function that
  * does similar things.
  */
+#if 0
 SYSCALL_DEFINE1(nice, int, increment)
 {
 	long nice, retval;
@@ -3895,7 +3891,7 @@ SYSCALL_DEFINE1(nice, int, increment)
 	set_user_nice(current, nice);
 	return 0;
 }
-
+#endif
 #endif
 
 /**
@@ -3906,6 +3902,8 @@ SYSCALL_DEFINE1(nice, int, increment)
  * RT tasks are offset by -100. Normal tasks are centered around 1, value goes
  * from 0 (SCHED_ISO) up to 82 (nice +19 SCHED_IDLEPRIO).
  */
+// Recheck
+#if 0
 int task_prio(const struct task_struct *p)
 {
 	int delta, prio = p->prio - MAX_RT_PRIO;
@@ -3924,6 +3922,7 @@ int task_prio(const struct task_struct *p)
 out:
 	return prio;
 }
+#endif
 
 /**
  * idle_cpu - is a given cpu idle currently?
@@ -3931,11 +3930,12 @@ out:
  *
  * Return: 1 if the CPU is currently idle. 0 otherwise.
  */
-int idle_cpu(int cpu)
+int idle_cpu_bfs(int cpu)
 {
 	return cpu_curr(cpu) == cpu_rq(cpu)->idle;
 }
 
+#if 0 
 /**
  * idle_task - return the idle task for a given cpu.
  * @cpu: the processor in question.
@@ -3946,6 +3946,7 @@ struct task_struct *idle_task(int cpu)
 {
 	return cpu_rq(cpu)->idle;
 }
+#endif
 
 /**
  * find_process_by_pid - find a process with a matching PID value.
@@ -4189,6 +4190,8 @@ out:
  *
  * NOTE that the task may be already dead.
  */
+//Check
+#if 0
 int sched_setscheduler(struct task_struct *p, int policy,
 		       const struct sched_param *param)
 {
@@ -4205,7 +4208,6 @@ int sched_setattr(struct task_struct *p, const struct sched_attr *attr)
 	return __sched_setscheduler(p, policy, &param, true, true);
 }
 EXPORT_SYMBOL_GPL(sched_setattr);
-
 /**
  * sched_setscheduler_nocheck - change the scheduling policy and/or RT priority of a thread from kernelspace.
  * @p: the task in question.
@@ -4225,6 +4227,7 @@ int sched_setscheduler_nocheck(struct task_struct *p, int policy,
 	return __sched_setscheduler(p, policy, param, false, true);
 }
 
+#endif
 static int
 do_sched_setscheduler(pid_t pid, int policy, struct sched_param __user *param)
 {
@@ -4319,6 +4322,7 @@ err_size:
 	return -E2BIG;
 }
 
+#if 0
 /**
  * sys_sched_setscheduler - set/change the scheduler policy and RT priority
  * @pid: the pid in question.
@@ -4354,7 +4358,6 @@ SYSCALL_DEFINE2(sched_setparam, pid_t, pid, struct sched_param __user *, param)
 {
 	return do_sched_setscheduler(pid, SETPARAM_POLICY, param);
 }
-
 /**
  * sys_sched_setattr - same as above, but with extended sched_attr
  * @pid: the pid in question.
@@ -4459,6 +4462,7 @@ out_unlock:
 	rcu_read_unlock();
 	return retval;
 }
+#endif
 
 static int sched_read_attr(struct sched_attr __user *uattr,
 			   struct sched_attr *attr,
@@ -4504,6 +4508,7 @@ static int sched_read_attr(struct sched_attr __user *uattr,
  * @size: sizeof(attr) for fwd/bwd comp.
  * @flags: for future extension.
  */
+#if 0
 SYSCALL_DEFINE4(sched_getattr, pid_t, pid, struct sched_attr __user *, uattr,
 		unsigned int, size, unsigned int, flags)
 {
@@ -4542,7 +4547,6 @@ out_unlock:
 	rcu_read_unlock();
 	return retval;
 }
-
 long sched_setaffinity(pid_t pid, const struct cpumask *in_mask)
 {
 	cpumask_var_t cpus_allowed, new_mask;
@@ -4615,6 +4619,7 @@ out_put_task:
 	put_online_cpus();
 	return retval;
 }
+#endif
 
 static int get_user_cpu_mask(unsigned long __user *user_mask_ptr, unsigned len,
 			     cpumask_t *new_mask)
@@ -4636,6 +4641,7 @@ static int get_user_cpu_mask(unsigned long __user *user_mask_ptr, unsigned len,
  *
  * Return: 0 on success. An error code otherwise.
  */
+#if 0 
 SYSCALL_DEFINE3(sched_setaffinity, pid_t, pid, unsigned int, len,
 		unsigned long __user *, user_mask_ptr)
 {
@@ -4651,7 +4657,6 @@ SYSCALL_DEFINE3(sched_setaffinity, pid_t, pid, unsigned int, len,
 	free_cpumask_var(new_mask);
 	return retval;
 }
-
 long sched_getaffinity(pid_t pid, cpumask_t *mask)
 {
 	struct task_struct *p;
@@ -4680,6 +4685,7 @@ out_unlock:
 
 	return retval;
 }
+#endif
 
 /**
  * sys_sched_getaffinity - get the cpu affinity of a process
@@ -4689,6 +4695,7 @@ out_unlock:
  *
  * Return: 0 on success. An error code otherwise.
  */
+#if 0
 SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid, unsigned int, len,
 		unsigned long __user *, user_mask_ptr)
 {
@@ -4748,8 +4755,9 @@ SYSCALL_DEFINE0(sched_yield)
 
 	return 0;
 }
+#endif
 
-int __sched _cond_resched(void)
+int __sched _cond_resched_bfs(void)
 {
 	if (should_resched(0)) {
 		preempt_schedule_common();
@@ -4757,7 +4765,7 @@ int __sched _cond_resched(void)
 	}
 	return 0;
 }
-EXPORT_SYMBOL(_cond_resched);
+EXPORT_SYMBOL(_cond_resched_bfs);
 
 /*
  * __cond_resched_lock() - if a reschedule is pending, drop the given lock,
@@ -4767,7 +4775,7 @@ EXPORT_SYMBOL(_cond_resched);
  * operations here to prevent schedule() from being called twice (once via
  * spin_unlock(), once by hand).
  */
-int __cond_resched_lock(spinlock_t *lock)
+int __cond_resched_lock_bfs(spinlock_t *lock)
 {
 	int resched = should_resched(PREEMPT_LOCK_OFFSET);
 	int ret = 0;
@@ -4785,9 +4793,9 @@ int __cond_resched_lock(spinlock_t *lock)
 	}
 	return ret;
 }
-EXPORT_SYMBOL(__cond_resched_lock);
+EXPORT_SYMBOL(__cond_resched_lock_bfs);
 
-int __sched __cond_resched_softirq(void)
+int __sched __cond_resched_softirq_bfs(void)
 {
 	BUG_ON(!in_softirq());
 
@@ -4799,7 +4807,7 @@ int __sched __cond_resched_softirq(void)
 	}
 	return 0;
 }
-EXPORT_SYMBOL(__cond_resched_softirq);
+EXPORT_SYMBOL(__cond_resched_softirq_bfs);
 
 /**
  * yield - yield the current processor to other threads.
@@ -4823,12 +4831,14 @@ EXPORT_SYMBOL(__cond_resched_softirq);
  * If you want to use yield() to be 'nice' for others, use cond_resched().
  * If you still want to use yield(), do not!
  */
+#if 0
 void __sched yield(void)
 {
 	set_current_state(TASK_RUNNING);
 	sys_sched_yield();
 }
 EXPORT_SYMBOL(yield);
+#endif
 
 /**
  * yield_to - yield the current processor to another thread in
@@ -4845,7 +4855,7 @@ EXPORT_SYMBOL(yield);
  *	false (0) if we failed to boost the target.
  *	-ESRCH if there's no task to yield to.
  */
-int __sched yield_to(struct task_struct *p, bool preempt)
+int __sched yield_to_bfs(struct task_struct *p, bool preempt)
 {
 	struct rq *rq, *p_rq;
 	unsigned long flags;
@@ -4875,7 +4885,7 @@ out_unlock:
 		schedule();
 	return yielded;
 }
-EXPORT_SYMBOL_GPL(yield_to);
+EXPORT_SYMBOL_GPL(yield_to_bfs);
 
 /*
  * This task is about to go to sleep on IO.  Increment rq->nr_iowait so
@@ -4884,7 +4894,7 @@ EXPORT_SYMBOL_GPL(yield_to);
  * But don't do that if it is a deliberate, throttling IO wait (this task
  * has set its backing_dev_info: the queue against which it should throttle)
  */
-
+#if 0
 long __sched io_schedule_timeout(long timeout)
 {
 	int old_iowait = current->in_iowait;
@@ -4905,6 +4915,7 @@ long __sched io_schedule_timeout(long timeout)
 	return ret;
 }
 EXPORT_SYMBOL(io_schedule_timeout);
+#endif
 
 /**
  * sys_sched_get_priority_max - return maximum RT priority.
@@ -4914,6 +4925,7 @@ EXPORT_SYMBOL(io_schedule_timeout);
  * rt_priority that can be used by a given scheduling class.
  * On failure, a negative error code is returned.
  */
+#if 0
 SYSCALL_DEFINE1(sched_get_priority_max, int, policy)
 {
 	int ret = -EINVAL;
@@ -4932,7 +4944,7 @@ SYSCALL_DEFINE1(sched_get_priority_max, int, policy)
 	}
 	return ret;
 }
-
+#endif
 /**
  * sys_sched_get_priority_min - return minimum RT priority.
  * @policy: scheduling class.
@@ -4941,6 +4953,7 @@ SYSCALL_DEFINE1(sched_get_priority_max, int, policy)
  * rt_priority that can be used by a given scheduling class.
  * On failure, a negative error code is returned.
  */
+#if 0
 SYSCALL_DEFINE1(sched_get_priority_min, int, policy)
 {
 	int ret = -EINVAL;
@@ -4959,7 +4972,7 @@ SYSCALL_DEFINE1(sched_get_priority_min, int, policy)
 	}
 	return ret;
 }
-
+#endif
 /**
  * sys_sched_rr_get_interval - return the default timeslice of a process.
  * @pid: pid of the process.
@@ -4969,6 +4982,7 @@ SYSCALL_DEFINE1(sched_get_priority_min, int, policy)
  * Return: On success, 0 and the timeslice is in @interval. Otherwise,
  * an error code.
  */
+#if 0
 SYSCALL_DEFINE2(sched_rr_get_interval, pid_t, pid,
 		struct timespec __user *, interval)
 {
@@ -5004,9 +5018,10 @@ out_unlock:
 	rcu_read_unlock();
 	return retval;
 }
-
+#endif
 static const char stat_nam[] = TASK_STATE_TO_CHAR_STR;
 
+#if 0
 void sched_show_task(struct task_struct *p)
 {
 	unsigned long free = 0;
@@ -5076,12 +5091,13 @@ void show_state_filter(unsigned long state_filter)
 		debug_show_all_locks();
 }
 
+
 void dump_cpu_task(int cpu)
 {
 	pr_info("Task dump for CPU %d:\n", cpu);
 	sched_show_task(cpu_curr(cpu));
 }
-
+#endif
 #ifdef CONFIG_SMP
 void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_mask)
 {
@@ -5103,7 +5119,7 @@ void do_set_cpus_allowed(struct task_struct *p, const struct cpumask *new_mask)
  * NOTE: this function does not set the idle thread's NEED_RESCHED
  * flag, to make booting more robust.
  */
-void init_idle(struct task_struct *idle, int cpu)
+void init_idle_bfs(struct task_struct *idle, int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long flags;
@@ -5137,6 +5153,7 @@ void init_idle(struct task_struct *idle, int cpu)
 #endif
 }
 
+#if 0
 int cpuset_cpumask_can_shrink(const struct cpumask __maybe_unused *cur,
 			      const struct cpumask __maybe_unused *trial)
 {
@@ -5186,7 +5203,8 @@ void wake_q_add(struct wake_q_head *head, struct task_struct *task)
 	*head->lastp = node;
 	head->lastp = &node->next;
 }
-
+#endif
+#if 0
 void wake_up_q(struct wake_q_head *head)
 {
 	struct wake_q_node *node = head->first;
@@ -5208,8 +5226,8 @@ void wake_up_q(struct wake_q_head *head)
 		put_task_struct(task);
 	}
 }
-
-void resched_cpu(int cpu)
+#endif
+void resched_cpu_bfs(int cpu)
 {
 	unsigned long flags;
 
@@ -7099,18 +7117,21 @@ void __init sched_init_smp(void)
 	}
 }
 #else
+#if 0
 void __init sched_init_smp(void)
 {
 }
+#endif
 #endif /* CONFIG_SMP */
 
+#if 0
 int in_sched_functions(unsigned long addr)
 {
 	return in_lock_functions(addr) ||
 		(addr >= (unsigned long)__sched_text_start
 		&& addr < (unsigned long)__sched_text_end);
 }
-
+#endif
 void __init sched_init_bfs(void)
 {
 #ifdef CONFIG_SMP
@@ -7332,7 +7353,7 @@ static inline void normalise_rt_tasks(void)
         printk("In %s at [%d] of %s - Abhishek\n",__func__,__LINE__,__FILE__);
 }
 
-void normalize_rt_tasks(void)
+void normalize_rt_tasks_bfs(void)
 {
 	normalise_rt_tasks();
 }
@@ -7531,7 +7552,7 @@ out:
 	*ut = prev->utime;
 	*st = prev->stime;
 }
-
+#if 0
 void task_cputime_adjusted(struct task_struct *p, cputime_t *ut, cputime_t *st)
 {
 	struct task_cputime cputime = {
@@ -7553,9 +7574,7 @@ void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut, cputime
 	cputime_adjust(&cputime, &p->signal->prev_cputime, ut, st);
 }
 #endif
-
-void init_idle_bootup_task(struct task_struct *idle)
-{}
+#endif
 
 #ifdef CONFIG_SCHED_DEBUG
 void proc_sched_show_task(struct task_struct *p, struct seq_file *m)

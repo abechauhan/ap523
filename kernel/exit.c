@@ -61,6 +61,8 @@
 
 static void exit_mm(struct task_struct *tsk);
 
+extern int sch_alg;
+
 static void __unhash_process(struct task_struct *p, bool group_dead)
 {
 	nr_threads--;
@@ -753,8 +755,8 @@ void do_exit(long code)
 	 * because of cgroup mode, must be called before cgroup_exit()
 	 */
 	perf_event_exit_task(tsk);
-
-	cgroup_exit(tsk);
+        if (sch_alg == 0)
+        	cgroup_exit(tsk);
 
 	/*
 	 * FIXME: do that only when needed, using sched_exit tracepoint

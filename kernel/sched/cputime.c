@@ -208,7 +208,7 @@ void __account_system_time(struct task_struct *p, cputime_t cputime,
  * @cputime: the cpu time spent in kernel space since the last update
  * @cputime_scaled: cputime scaled by cpu frequency
  */
-void account_system_time(struct task_struct *p, int hardirq_offset,
+void account_system_time_cfs(struct task_struct *p, int hardirq_offset,
 			 cputime_t cputime, cputime_t cputime_scaled)
 {
 	int index;

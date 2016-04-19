@@ -595,7 +595,7 @@ void resched_curr(struct rq *rq)
 		trace_sched_wake_idle_without_ipi(cpu);
 }
 
-void resched_cpu(int cpu)
+void resched_cpu_cfs(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long flags;
@@ -2031,14 +2031,14 @@ out:
  * It may be assumed that this function implies a write memory barrier before
  * changing the task state if and only if any tasks are woken up.
  */
-int wake_up_process(struct task_struct *p)
+int wake_up_process_cfs(struct task_struct *p)
 {
 	WARN_ON(task_is_stopped_or_traced(p));
 	return try_to_wake_up(p, TASK_NORMAL, 0);
 }
-EXPORT_SYMBOL(wake_up_process);
+EXPORT_SYMBOL(wake_up_process_cfs);
 
-int wake_up_state(struct task_struct *p, unsigned int state)
+int wake_up_state_cfs(struct task_struct *p, unsigned int state)
 {
 	return try_to_wake_up(p, state, 0);
 }
@@ -2160,7 +2160,7 @@ int sysctl_numa_balancing(struct ctl_table *table, int write,
 /*
  * fork()/clone()-time setup:
  */
-int sched_fork(unsigned long clone_flags, struct task_struct *p)
+int sched_fork_cfs(unsigned long clone_flags, struct task_struct *p)
 {
 	unsigned long flags;
 	int cpu = get_cpu();
@@ -2345,7 +2345,7 @@ extern void init_dl_bw(struct dl_bw *dl_b);
  * that must be done for every newly created context, then puts the task
  * on the runqueue and wakes it.
  */
-void wake_up_new_task(struct task_struct *p)
+void wake_up_new_task_cfs(struct task_struct *p)
 {
 	unsigned long flags;
 	struct rq *rq;
@@ -2554,6 +2554,7 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 	}
 
 	tick_nohz_task_switch();
+        printk("In %s at [%d] from %s - Abhishek\n",__func__,__LINE__,__FILE__);
 	return rq;
 }
 
@@ -2598,7 +2599,7 @@ static inline void balance_callback(struct rq *rq)
  * schedule_tail - first thing a freshly forked thread must call.
  * @prev: the thread we just switched away from.
  */
-asmlinkage __visible void schedule_tail(struct task_struct *prev)
+asmlinkage __visible void schedule_tail_cfs(struct task_struct *prev)
 	__releases(rq->lock)
 {
 	struct rq *rq;
@@ -2606,7 +2607,8 @@ asmlinkage __visible void schedule_tail(struct task_struct *prev)
 	/* finish_task_switch() drops rq->lock and enables preemtion */
 	preempt_disable();
 	rq = finish_task_switch(prev);
-	balance_callback(rq);
+        if (sch_alg == 0)
+        	balance_callback(rq);
 	preempt_enable();
 
 	if (current->set_child_tid)
@@ -2666,7 +2668,7 @@ context_switch(struct rq *rq, struct task_struct *prev,
  * externally visible scheduler statistics: current number of runnable
  * threads, total number of context switches performed since bootup.
  */
-unsigned long nr_running(void)
+unsigned long nr_running_cfs(void)
 {
 	unsigned long i, sum = 0;
 
@@ -2695,7 +2697,7 @@ bool single_task_running_cfs(void)
 }
 EXPORT_SYMBOL(single_task_running_cfs);
 
-unsigned long long nr_context_switches(void)
+unsigned long long nr_context_switches_cfs(void)
 {
 	int i;
 	unsigned long long sum = 0;
@@ -2706,7 +2708,7 @@ unsigned long long nr_context_switches(void)
 	return sum;
 }
 
-unsigned long nr_iowait(void)
+unsigned long nr_iowait_cfs(void)
 {
 	unsigned long i, sum = 0;
 
@@ -2716,7 +2718,7 @@ unsigned long nr_iowait(void)
 	return sum;
 }
 
-unsigned long nr_iowait_cpu(int cpu)
+unsigned long nr_iowait_cpu_cfs(int cpu)
 {
 	struct rq *this = cpu_rq(cpu);
 	return atomic_read(&this->nr_iowait);
@@ -2770,7 +2772,7 @@ EXPORT_PER_CPU_SYMBOL(kernel_cpustat);
  * In case the task is currently running, return the runtime plus current's
  * pending runtime that have not been accounted yet.
  */
-unsigned long long task_sched_runtime(struct task_struct *p)
+unsigned long long task_sched_runtime_cfs(struct task_struct *p)
 {
 	unsigned long flags;
 	struct rq *rq;
@@ -2812,7 +2814,7 @@ unsigned long long task_sched_runtime(struct task_struct *p)
  * This function gets called by the timer code, with HZ frequency.
  * We call it with interrupts disabled.
  */
-void scheduler_tick(void)
+void scheduler_tick_cfs(void)
 {
 	int cpu = smp_processor_id();
 	struct rq *rq = cpu_rq(cpu);
@@ -3063,6 +3065,8 @@ static void __sched __schedule(void)
 	struct rq *rq;
 	int cpu;
 
+        printk("In %s at [%d] from %s - Abhishek\n",__func__,__LINE__,__FILE__);
+        dump_stack();
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
 	rcu_note_context_switch();
@@ -3143,7 +3147,7 @@ static inline void sched_submit_work(struct task_struct *tsk)
 		blk_schedule_flush_plug(tsk);
 }
 
-asmlinkage __visible void __sched schedule(void)
+asmlinkage __visible void __sched schedule_cfs(void)
 {
 	struct task_struct *tsk = current;
 
@@ -3154,7 +3158,7 @@ asmlinkage __visible void __sched schedule(void)
 		sched_preempt_enable_no_resched();
 	} while (need_resched());
 }
-EXPORT_SYMBOL(schedule);
+EXPORT_SYMBOL(schedule_cfs);
 
 #ifdef CONFIG_CONTEXT_TRACKING
 asmlinkage __visible void __sched schedule_user(void)
@@ -3293,12 +3297,12 @@ asmlinkage __visible void __sched preempt_schedule_irq(void)
 	exception_exit(prev_state);
 }
 
-int default_wake_function(wait_queue_t *curr, unsigned mode, int wake_flags,
+int default_wake_function_cfs(wait_queue_t *curr, unsigned mode, int wake_flags,
 			  void *key)
 {
 	return try_to_wake_up(curr->private, mode, wake_flags);
 }
-EXPORT_SYMBOL(default_wake_function);
+EXPORT_SYMBOL(default_wake_function_cfs);
 
 #ifdef CONFIG_RT_MUTEXES
 
@@ -3313,7 +3317,7 @@ EXPORT_SYMBOL(default_wake_function);
  * Used by the rt_mutex code to implement priority inheritance
  * logic. Call site only calls if the priority of the task changed.
  */
-void rt_mutex_setprio(struct task_struct *p, int prio)
+void rt_mutex_setprio_cfs(struct task_struct *p, int prio)
 {
 	int oldprio, queued, running, enqueue_flag = 0;
 	struct rq *rq;
@@ -3400,7 +3404,7 @@ out_unlock:
 }
 #endif
 
-void set_user_nice(struct task_struct *p, long nice)
+void set_user_nice_cfs(struct task_struct *p, long nice)
 {
 	int old_prio, delta, queued;
 	unsigned long flags;
@@ -3445,7 +3449,7 @@ void set_user_nice(struct task_struct *p, long nice)
 out_unlock:
 	task_rq_unlock(rq, p, &flags);
 }
-EXPORT_SYMBOL(set_user_nice);
+EXPORT_SYMBOL(set_user_nice_cfs);
 
 /*
  * can_nice - check if a task can reduce its nice value
@@ -3515,7 +3519,7 @@ int task_prio(const struct task_struct *p)
  *
  * Return: 1 if the CPU is currently idle. 0 otherwise.
  */
-int idle_cpu(int cpu)
+int idle_cpu_cfs(int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
 
@@ -4561,7 +4565,7 @@ SYSCALL_DEFINE0(sched_yield)
 	return 0;
 }
 
-int __sched _cond_resched(void)
+int __sched _cond_resched_cfs(void)
 {
 	if (should_resched(0)) {
 		preempt_schedule_common();
@@ -4569,7 +4573,7 @@ int __sched _cond_resched(void)
 	}
 	return 0;
 }
-EXPORT_SYMBOL(_cond_resched);
+EXPORT_SYMBOL(_cond_resched_cfs);
 
 /*
  * __cond_resched_lock() - if a reschedule is pending, drop the given lock,
@@ -4579,7 +4583,7 @@ EXPORT_SYMBOL(_cond_resched);
  * operations here to prevent schedule() from being called twice (once via
  * spin_unlock(), once by hand).
  */
-int __cond_resched_lock(spinlock_t *lock)
+int __cond_resched_lock_cfs(spinlock_t *lock)
 {
 	int resched = should_resched(PREEMPT_LOCK_OFFSET);
 	int ret = 0;
@@ -4597,9 +4601,9 @@ int __cond_resched_lock(spinlock_t *lock)
 	}
 	return ret;
 }
-EXPORT_SYMBOL(__cond_resched_lock);
+EXPORT_SYMBOL(__cond_resched_lock_cfs);
 
-int __sched __cond_resched_softirq(void)
+int __sched __cond_resched_softirq_cfs(void)
 {
 	BUG_ON(!in_softirq());
 
@@ -4611,7 +4615,7 @@ int __sched __cond_resched_softirq(void)
 	}
 	return 0;
 }
-EXPORT_SYMBOL(__cond_resched_softirq);
+EXPORT_SYMBOL(__cond_resched_softirq_cfs);
 
 /**
  * yield - yield the current processor to other threads.
@@ -4657,7 +4661,7 @@ EXPORT_SYMBOL(yield);
  *	false (0) if we failed to boost the target.
  *	-ESRCH if there's no task to yield to.
  */
-int __sched yield_to(struct task_struct *p, bool preempt)
+int __sched yield_to_cfs(struct task_struct *p, bool preempt)
 {
 	struct task_struct *curr = current;
 	struct rq *rq, *p_rq;
@@ -4714,7 +4718,7 @@ out_irq:
 
 	return yielded;
 }
-EXPORT_SYMBOL_GPL(yield_to);
+EXPORT_SYMBOL_GPL(yield_to_cfs);
 
 /*
  * This task is about to go to sleep on IO. Increment rq->nr_iowait so
@@ -4920,6 +4924,8 @@ void show_state_filter(unsigned long state_filter)
 
 void init_idle_bootup_task(struct task_struct *idle)
 {
+        if (sch_alg == 1)
+                return;
 	idle->sched_class = &idle_sched_class;
 }
 
@@ -4931,7 +4937,7 @@ void init_idle_bootup_task(struct task_struct *idle)
  * NOTE: this function does not set the idle thread's NEED_RESCHED
  * flag, to make booting more robust.
  */
-void init_idle(struct task_struct *idle, int cpu)
+void init_idle_cfs(struct task_struct *idle, int cpu)
 {
 	struct rq *rq = cpu_rq(cpu);
 	unsigned long flags;
@@ -4995,6 +5001,8 @@ int cpuset_cpumask_can_shrink(const struct cpumask *cur,
 	struct dl_bw *cur_dl_b;
 	unsigned long flags;
 
+        if (sch_alg == 1)
+                return 1;
 	if (!cpumask_weight(cur))
 		return ret;
 
@@ -7279,6 +7287,8 @@ void __init sched_init_smp(void)
 #else
 void __init sched_init_smp(void)
 {
+        if (sch_alg == 1)
+                return;
 	sched_init_granularity();
 }
 #endif /* CONFIG_SMP */
@@ -7542,7 +7552,7 @@ EXPORT_SYMBOL(___might_sleep);
 #endif
 
 #ifdef CONFIG_MAGIC_SYSRQ
-void normalize_rt_tasks(void)
+void normalize_rt_tasks_cfs(void)
 {
 	struct task_struct *g, *p;
 	struct sched_attr attr = {
