@@ -1,6 +1,6 @@
 #include "wrapper_sched.h"
 
-int sch_alg = 1;
+int sch_alg = 0;
 EXPORT_SYMBOL(sch_alg);
 
 bool single_task_running(void)
@@ -20,11 +20,13 @@ void __init sched_init(void)
         {
                 printk("CFS!!!!!!!!!!!!!!!!!!!\n");
                 sched_init_cfs();
+                sched_init_bfs();
         }
         if (sch_alg == 1)    
         {       
                 printk("BFS!!!!!!!!!!!!!!!!!!!\n");
                 sched_init_bfs();
+                sched_init_cfs();
         }
 }
 
@@ -137,9 +139,15 @@ void scheduler_tick(void)
 void init_idle(struct task_struct *idle, int cpu)
 {
         if (sch_alg == 0)
+        {
                 init_idle_cfs(idle, cpu);
-        else
+                printk("CFS!!!!!!!!!!!!!!!!!!!IDLE\n");
+        }
+        else 
+        {
                 init_idle_bfs(idle, cpu);
+                printk("BFS!!!!!!!!!!!!!!!!!!!IDLE\n");
+        }
 }
 
 void wake_up_new_task(struct task_struct *p)
@@ -194,6 +202,7 @@ asmlinkage __visible void __sched schedule(void)
         else
                 schedule_bfs();
 }
+EXPORT_SYMBOL(schedule);
 
 int wake_up_process(struct task_struct *p)
 {
@@ -264,4 +273,57 @@ unsigned long long task_sched_runtime(struct task_struct *p)
                 return task_sched_runtime_cfs(p);
         else
                 return task_sched_runtime_bfs(p);
+}
+
+
+void __sched yield(void)
+{
+        if (sch_alg == 0)
+                yield_cfs();
+        else
+                yield_bfs();
+}
+EXPORT_SYMBOL(yield);
+
+
+/**
+ * sys_sched_yield - yield the current processor to other threads.
+ *
+ * This function yields the current CPU to other tasks. If there are no
+ * other threads running on this CPU then this function will return.
+ *
+ * Return: 0.
+ */
+SYSCALL_DEFINE0(sched_yield)
+{
+        if (sch_alg == 0)
+                sched_yield_cfs_sys();
+        else 
+                sched_yield_bfs_sys();
+	return 0;
+}
+
+
+void enqueue_task(struct rq *rq, struct task_struct *p, ...)
+{
+        va_list arguments;
+        int flags = 0;
+
+        if (sch_alg == 0)
+        {
+                va_start(arguments, p);
+                flags = va_arg(arguments, int);
+                enqueue_task_cfs(rq, p, flags);
+        }
+        else
+                enqueue_task_bfs(rq, p);
+}
+
+
+void __sched schedule_preempt_disabled(void)
+{
+        if (sch_alg == 0)
+                schedule_preempt_disabled_cfs();
+        else
+                schedule_preempt_disabled_bfs();
 }

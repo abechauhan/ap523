@@ -1,6 +1,7 @@
 #include "sched.h" 
 #include "bfs_sched.h"
 #include <linux/module.h>
+#include <linux/syscalls.h>
 #ifndef WRAPPER_SCHED_H
 #define WRAPPER_SCHED_H
 
@@ -131,4 +132,24 @@ asmlinkage __visible void schedule_tail_cfs(struct task_struct *prev)
 unsigned long long task_sched_runtime(struct task_struct *p);
 unsigned long long task_sched_runtime_bfs(struct task_struct *p);
 unsigned long long task_sched_runtime_cfs(struct task_struct *p);
+
+void __sched yield(void);
+void __sched yield_bfs(void);
+void __sched yield_cfs(void);
+
+extern inline void grq_lock_irq(void);
+extern inline void requeue_task(struct task_struct *p);
+struct rq *this_rq_lock(void);
+
+void sched_yield_cfs_sys(void);
+void sched_yield_bfs_sys(void);
+
+
+void enqueue_task(struct rq *rq, struct task_struct *p, ...);
+void enqueue_task_bfs(struct rq *rq, struct task_struct *p);
+void enqueue_task_cfs(struct rq *rq, struct task_struct *p, int flags);
+
+void __sched schedule_preempt_disabled(void);
+void __sched schedule_preempt_disabled_bfs(void);
+void __sched schedule_preempt_disabled_cfs(void);
 #endif

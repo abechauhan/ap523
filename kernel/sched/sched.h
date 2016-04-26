@@ -687,6 +687,7 @@ struct rq {
 #endif
         /* BFS RQ */
 	/* Pointer to grq spinlock */
+        int which_sched; /* Marker for which sched algo it belongs to -Abhishek 25 April */
 	raw_spinlock_t *grq_lock;
 
 	/* Stored data about rq->curr to work outside grq lock */

@@ -111,7 +111,9 @@ extern int sysctl_nr_open_min, sysctl_nr_open_max;
 #ifndef CONFIG_MMU
 extern int sysctl_nr_trim_pages;
 #endif
-
+#ifdef CONFIG_SCHED_BFS
+extern int sch_alg;
+#endif
 /* Constants used for minimum and  maximum */
 #ifdef CONFIG_LOCKUP_DETECTOR
 static int sixty = 60;
@@ -429,8 +431,17 @@ static struct ctl_table kern_table[] = {
 		.data		= &sysctl_sched_cfs_bandwidth_slice,
 		.maxlen		= sizeof(unsigned int),
 		.mode		= 0644,
-		.proc_handler	= proc_dointvec_minmax,
+		.proc_handler	= proc_sched_switch,
 		.extra1		= &one,
+	},
+#endif
+#ifdef CONFIG_SCHED_BFS
+	{
+		.procname	= "switch_sched",
+		.data		= &sch_alg,
+		.maxlen		= sizeof(unsigned int),
+		.mode		= 0666,
+		.proc_handler	= proc_dointvec_minmax,
 	},
 #endif
 #ifdef CONFIG_PROVE_LOCKING

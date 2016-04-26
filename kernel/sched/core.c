@@ -94,7 +94,6 @@ DEFINE_MUTEX(sched_domains_mutex);
 DEFINE_PER_CPU_SHARED_ALIGNED(struct rq, runqueues);
 
 static void update_rq_clock_task(struct rq *rq, s64 delta);
-
 void update_rq_clock_cfs(struct rq *rq)
 {
 	s64 delta;
@@ -290,7 +289,7 @@ cpumask_var_t cpu_isolated_map;
 /*
  * this_rq_lock - lock this runqueue and disable interrupts.
  */
-static struct rq *this_rq_lock(void)
+struct rq *this_rq_lock(void)
 	__acquires(rq->lock)
 {
 	struct rq *rq;
@@ -827,7 +826,7 @@ static void set_load_weight(struct task_struct *p)
 	load->inv_weight = prio_to_wmult[prio];
 }
 
-static void enqueue_task(struct rq *rq, struct task_struct *p, int flags)
+void enqueue_task_cfs(struct rq *rq, struct task_struct *p, int flags)
 {
 	update_rq_clock(rq);
 	sched_info_queued(rq, p);
@@ -2554,7 +2553,6 @@ static struct rq *finish_task_switch(struct task_struct *prev)
 	}
 
 	tick_nohz_task_switch();
-        printk("In %s at [%d] from %s - Abhishek\n",__func__,__LINE__,__FILE__);
 	return rq;
 }
 
@@ -3065,8 +3063,6 @@ static void __sched __schedule(void)
 	struct rq *rq;
 	int cpu;
 
-        printk("In %s at [%d] from %s - Abhishek\n",__func__,__LINE__,__FILE__);
-        dump_stack();
 	cpu = smp_processor_id();
 	rq = cpu_rq(cpu);
 	rcu_note_context_switch();
@@ -3150,12 +3146,21 @@ static inline void sched_submit_work(struct task_struct *tsk)
 asmlinkage __visible void __sched schedule_cfs(void)
 {
 	struct task_struct *tsk = current;
-
+        if (sch_alg != 0)
+                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 	sched_submit_work(tsk);
+        if (sch_alg != 0)
+                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 	do {
 		preempt_disable();
+                if (sch_alg != 0)
+                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 		__schedule();
+                if (sch_alg != 0)
+                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 		sched_preempt_enable_no_resched();
+                if (sch_alg != 0)
+                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 	} while (need_resched());
 }
 EXPORT_SYMBOL(schedule_cfs);
@@ -3184,11 +3189,19 @@ asmlinkage __visible void __sched schedule_user(void)
  *
  * Returns with preemption disabled. Note: preempt_count must be 1
  */
-void __sched schedule_preempt_disabled(void)
+void __sched schedule_preempt_disabled_cfs(void)
 {
+        if (sch_alg != 0)
+                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 	sched_preempt_enable_no_resched();
+        if (sch_alg != 0)
+                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 	schedule();
+        if (sch_alg != 0)
+                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 	preempt_disable();
+        if (sch_alg != 0)
+                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 }
 
 static void __sched notrace preempt_schedule_common(void)
@@ -4544,25 +4557,23 @@ SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid, unsigned int, len,
  *
  * Return: 0.
  */
-SYSCALL_DEFINE0(sched_yield)
+void sched_yield_cfs_sys(void)
 {
-	struct rq *rq = this_rq_lock();
+	struct rq *rq;
 
-	schedstat_inc(rq, yld_count);
-	current->sched_class->yield_task(rq);
+        rq = this_rq_lock();
+        schedstat_inc(rq, yld_count);
+        current->sched_class->yield_task(rq);
+        /*
+       	 * Since we are going to call schedule() anyway, there's
+         * no need to preempt or enable interrupts:
+       	 */
+        __release(rq->lock);
+       	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
+        do_raw_spin_unlock(&rq->lock);
+       	sched_preempt_enable_no_resched();
 
-	/*
-	 * Since we are going to call schedule() anyway, there's
-	 * no need to preempt or enable interrupts:
-	 */
-	__release(rq->lock);
-	spin_release(&rq->lock.dep_map, 1, _THIS_IP_);
-	do_raw_spin_unlock(&rq->lock);
-	sched_preempt_enable_no_resched();
-
-	schedule();
-
-	return 0;
+        schedule();
 }
 
 int __sched _cond_resched_cfs(void)
@@ -4639,12 +4650,12 @@ EXPORT_SYMBOL(__cond_resched_softirq_cfs);
  * If you want to use yield() to be 'nice' for others, use cond_resched().
  * If you still want to use yield(), do not!
  */
-void __sched yield(void)
+void __sched yield_cfs(void)
 {
 	set_current_state(TASK_RUNNING);
 	sys_sched_yield();
 }
-EXPORT_SYMBOL(yield);
+EXPORT_SYMBOL(yield_cfs);
 
 /**
  * yield_to - yield the current processor to another thread in
@@ -4924,9 +4935,10 @@ void show_state_filter(unsigned long state_filter)
 
 void init_idle_bootup_task(struct task_struct *idle)
 {
-        if (sch_alg == 1)
+        if (sch_alg == 0)
+        	idle->sched_class = &idle_sched_class;
+        else
                 return;
-	idle->sched_class = &idle_sched_class;
 }
 
 /**

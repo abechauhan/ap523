@@ -230,7 +230,7 @@ static struct root_domain def_root_domain;
 #endif /* CONFIG_SMP */
 
 /* There can be only one */
-static struct global_rq grq;
+struct global_rq grq;
 
 static DEFINE_MUTEX(sched_hotcpu_mutex);
 
@@ -392,7 +392,7 @@ static inline void grq_unlock(void)
 	raw_spin_unlock(&grq.lock);
 }
 
-static inline void grq_lock_irq(void)
+inline void grq_lock_irq(void)
 	__acquires(grq.lock)
 {
 	raw_spin_lock_irq(&grq.lock);
@@ -579,7 +579,7 @@ static bool isoprio_suitable(void)
 /*
  * Adding to the global runqueue. Enter with grq locked.
  */
-static void enqueue_task(struct task_struct *p, struct rq *rq)
+void enqueue_task_bfs(struct rq *rq, struct task_struct *p)
 {
 	if (!rt_task(p)) {
 		/* Check it hasn't gotten rt from PI */
@@ -594,7 +594,7 @@ static void enqueue_task(struct task_struct *p, struct rq *rq)
 	sched_info_queued(rq, p);
 }
 
-static inline void requeue_task(struct task_struct *p)
+inline void requeue_task(struct task_struct *p)
 {
 	sched_info_queued(task_rq(p), p);
 }
@@ -971,7 +971,7 @@ static void activate_task_bfs(struct task_struct *p, struct rq *rq)
 	p->prio = effective_prio(p);
 	if (task_contributes_to_load(p))
 		grq.nr_uninterruptible--;
-	enqueue_task(p, rq);
+	enqueue_task(rq, p);
 	rq->soft_affined++;
 	p->on_rq = 1;
 	grq.nr_running++;
@@ -1120,7 +1120,7 @@ static inline void return_task(struct task_struct *p, struct rq *rq, bool deacti
 		deactivate_task_bfs(p, rq);
 	else {
 		inc_qnr();
-		enqueue_task(p, rq);
+		enqueue_task(rq, p);
 	}
 }
 
@@ -3569,6 +3569,7 @@ static inline void sched_submit_work(struct task_struct *tsk)
 asmlinkage __visible void __sched schedule_bfs(void)
 {
 	struct task_struct *tsk = current;
+        printk(" Here - sch_alg = %d\n",sch_alg);
 
 	sched_submit_work(tsk);
 	do {
@@ -3604,14 +3605,13 @@ asmlinkage __visible void __sched schedule_user(void)
  *
  * Returns with preemption disabled. Note: preempt_count must be 1
  */
-#if 0
-void __sched schedule_preempt_disabled(void)
+void __sched schedule_preempt_disabled_bfs(void)
 {
 	sched_preempt_enable_no_resched();
 	schedule();
 	preempt_disable();
 }
-#endif
+
 static void __sched notrace preempt_schedule_common(void)
 {
 	do {
@@ -3776,7 +3776,7 @@ void rt_mutex_setprio_bfs(struct task_struct *p, int prio)
 	if (task_running_bfs(p) && prio > oldprio)
 		resched_task(p);
 	if (queued) {
-		enqueue_task(p, rq);
+		enqueue_task(rq, p);
 		try_preempt(p, rq);
 	}
 
@@ -3829,7 +3829,7 @@ void set_user_nice_bfs(struct task_struct *p, long nice)
 	p->prio = effective_prio(p);
 
 	if (queued) {
-		enqueue_task(p, rq);
+		enqueue_task(rq, p);
 		if (new_static < old_static)
 			try_preempt(p, rq);
 	} else if (task_running_bfs(p)) {
@@ -4168,7 +4168,7 @@ recheck:
 		dequeue_task(p);
 	__setscheduler(p, rq, policy, param->sched_priority, pi);
 	if (queued) {
-		enqueue_task(p, rq);
+		enqueue_task(rq, p);
 		try_preempt(p, rq);
 	}
 	__task_grq_unlock();
@@ -4723,6 +4723,7 @@ SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid, unsigned int, len,
 
 	return ret;
 }
+#endif
 
 /**
  * sys_sched_yield - yield the current processor to other threads.
@@ -4733,7 +4734,7 @@ SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid, unsigned int, len,
  *
  * Return: 0.
  */
-SYSCALL_DEFINE0(sched_yield)
+void sched_yield_bfs_sys(void)
 {
 	struct task_struct *p;
 
@@ -4752,10 +4753,7 @@ SYSCALL_DEFINE0(sched_yield)
 	sched_preempt_enable_no_resched();
 
 	schedule();
-
-	return 0;
 }
-#endif
 
 int __sched _cond_resched_bfs(void)
 {
@@ -4831,14 +4829,12 @@ EXPORT_SYMBOL(__cond_resched_softirq_bfs);
  * If you want to use yield() to be 'nice' for others, use cond_resched().
  * If you still want to use yield(), do not!
  */
-#if 0
-void __sched yield(void)
+void __sched yield_bfs(void)
 {
 	set_current_state(TASK_RUNNING);
 	sys_sched_yield();
 }
-EXPORT_SYMBOL(yield);
-#endif
+EXPORT_SYMBOL(yield_bfs);
 
 /**
  * yield_to - yield the current processor to another thread in
@@ -7343,7 +7339,7 @@ static inline void normalise_rt_tasks(void)
 			dequeue_task(p);
 		__setscheduler(p, rq, SCHED_NORMAL, 0, false);
 		if (queued) {
-			enqueue_task(p, rq);
+			enqueue_task(rq, p);
 			try_preempt(p, rq);
 		}
 
