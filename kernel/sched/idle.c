@@ -59,7 +59,7 @@ static inline int cpu_idle_poll(void)
 	local_irq_enable();
 	stop_critical_timings();
 	while (!tif_need_resched() &&
-		(cpu_idle_force_poll || tick_check_broadcast_expired()))
+			(cpu_idle_force_poll || tick_check_broadcast_expired()))
 		cpu_relax();
 	start_critical_timings();
 	trace_cpu_idle_rcuidle(PWR_EVENT_EXIT, smp_processor_id());
@@ -95,7 +95,7 @@ void default_idle_call(void)
 }
 
 static int call_cpuidle(struct cpuidle_driver *drv, struct cpuidle_device *dev,
-		      int next_state)
+		int next_state)
 {
 	/* Fall back to the default arch idle method on errors. */
 	if (next_state < 0) {
@@ -208,7 +208,7 @@ DEFINE_PER_CPU(bool, cpu_dead_idle);
  */
 static void cpu_idle_loop(void)
 {
-        printk("%d Here -[%d]\n", __LINE__, current->pid);
+	printk("%d Here -[%d]\n", __LINE__, current->pid);
 	while (1) {
 		/*
 		 * If the arch has a polling bit, we maintain an invariant:
@@ -218,45 +218,44 @@ static void cpu_idle_loop(void)
 		 * the polling bit set, then setting need_resched is
 		 * guaranteed to cause the cpu to reschedule.
 		 */
-                printk("%d Here -[%d] %p\n", __LINE__, current->pid, );
 
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+		if (sch_alg != 0)
+			printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 		__current_set_polling();
 		tick_nohz_idle_enter();
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+		if (sch_alg != 0)
+			printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 
 		while (!need_resched()) {
-                        if (sch_alg != 0)
-                                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+			if (sch_alg != 0)
+				printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 
 			check_pgt_cache();
-                        if (sch_alg != 0)
-                                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+			if (sch_alg != 0)
+				printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 			rmb();
-                        
-                        if (sch_alg != 0)
-                                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+
+			if (sch_alg != 0)
+				printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 			if (cpu_is_offline(smp_processor_id())) {
 				rcu_cpu_notify(NULL, CPU_DYING_IDLE,
-					       (void *)(long)smp_processor_id());
+						(void *)(long)smp_processor_id());
 				smp_mb(); /* all activity before dead. */
 				this_cpu_write(cpu_dead_idle, true);
 				arch_cpu_idle_dead();
-                                if (sch_alg != 0)
-                                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+				if (sch_alg != 0)
+					printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 			}
 
-                        if (sch_alg != 0)
-                                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+			if (sch_alg != 0)
+				printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 			local_irq_disable();
-                        if (sch_alg != 0)
-                                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+			if (sch_alg != 0)
+				printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 			arch_cpu_idle_enter();
 
-                        if (sch_alg != 0)
-                                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+			if (sch_alg != 0)
+				printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 			/*
 			 * In poll mode we reenable interrupts and spin.
 			 *
@@ -271,8 +270,8 @@ static void cpu_idle_loop(void)
 			else
 				cpuidle_idle_call();
 
-                        if (sch_alg != 0)
-                                printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+			if (sch_alg != 0)
+				printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 			arch_cpu_idle_exit();
 		}
 
@@ -285,17 +284,17 @@ static void cpu_idle_loop(void)
 		 * not have had an IPI to fold the state for us.
 		 */
 		preempt_set_need_resched();
-                
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+
+		if (sch_alg != 0)
+			printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 		tick_nohz_idle_exit();
-                
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+
+		if (sch_alg != 0)
+			printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 		__current_clr_polling();
-                
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+
+		if (sch_alg != 0)
+			printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 
 		/*
 		 * We promise to call sched_ttwu_pending and reschedule
@@ -304,16 +303,16 @@ static void cpu_idle_loop(void)
 		 * before doing these things.
 		 */
 		smp_mb__after_atomic();
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+		if (sch_alg != 0)
+			printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 
 		sched_ttwu_pending();
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+		if (sch_alg != 0)
+			printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 		schedule_preempt_disabled();
 	}
-                if (sch_alg != 0)
-                        printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
+	if (sch_alg != 0)
+		printk("Kya Yeh!!!!!!!!!! %d %s\n",__LINE__,__func__);
 }
 
 void cpu_startup_entry(enum cpuhp_state state)

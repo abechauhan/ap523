@@ -88,7 +88,7 @@
 #include "../smpboot.h"
 
 #define CREATE_TRACE_POINTS
-#include <trace/events/sched.h>
+#include <trace/events/sched_bfs.h>
 
 #include "wrapper_sched.h"
 
@@ -1005,7 +1005,7 @@ void set_task_cpu(struct task_struct *p, unsigned int cpu)
 #endif
 	if (task_cpu(p) == cpu)
 		return;
-	trace_sched_migrate_task(p, cpu);
+	trace_sched_migrate_task_bfs(p, cpu);
 	perf_event_task_migrate(p);
 
 	/*
@@ -1225,7 +1225,7 @@ unsigned long wait_task_inactive(struct task_struct *p, long match_state)
 		 * just go back and repeat.
 		 */
 		rq = task_grq_lock(p, &flags);
-		trace_sched_wait_task(p);
+		trace_sched_wait_task_bfs(p);
 		running = task_running_bfs(p);
 		on_rq = p->on_rq;
 		ncsw = 0;
@@ -1518,7 +1518,7 @@ static inline void ttwu_activate(struct task_struct *p, struct rq *rq,
 static inline void ttwu_post_activation(struct task_struct *p, struct rq *rq,
 					bool success)
 {
-	trace_sched_wakeup(p);
+	trace_sched_wakeup_bfs(p);
 	p->state = TASK_RUNNING;
 
 	/*
@@ -1581,7 +1581,7 @@ static bool try_to_wake_up(struct task_struct *p, unsigned int state,
 	if (!((unsigned int)p->state & state))
 		goto out_unlock;
 
-	trace_sched_waking(p);
+	trace_sched_waking_bfs(p);
 
 	if (task_queued(p) || task_running_bfs(p))
 		goto out_running;
@@ -1619,7 +1619,7 @@ static void try_to_wake_up_local(struct task_struct *p)
 	if (!(p->state & TASK_NORMAL))
 		return;
 
-	trace_sched_waking(p);
+	trace_sched_waking_bfs(p);
 
 	if (!task_queued(p)) {
 		if (likely(!task_running_bfs(p))) {
@@ -1752,7 +1752,7 @@ void wake_up_new_task_bfs(struct task_struct *p)
 	p->prio = rq->curr->normal_prio;
 
 	activate_task_bfs(p, rq);
-	trace_sched_wakeup_new(p);
+	trace_sched_wakeup_new_bfs(p);
 	if (unlikely(p->policy == SCHED_FIFO))
 		goto after_ts_init;
 
@@ -1903,7 +1903,7 @@ prepare_task_switch(struct rq *rq, struct task_struct *prev,
 	fire_sched_out_preempt_notifiers(prev, next);
 	prepare_lock_switch_bfs(rq, next);
 	prepare_arch_switch(next);
-	trace_sched_switch(prev, next);
+	trace_sched_switch_bfs(prev, next);
 }
 
 /**
@@ -2964,6 +2964,7 @@ notrace unsigned long get_parent_ip(unsigned long addr)
 	return addr;
 }
 #endif
+#if 0
 #if defined(CONFIG_PREEMPT) && (defined(CONFIG_DEBUG_PREEMPT) || \
 				defined(CONFIG_PREEMPT_TRACER))
 void preempt_count_add(int val)
@@ -3017,7 +3018,7 @@ void preempt_count_sub(int val)
 EXPORT_SYMBOL(preempt_count_sub);
 NOKPROBE_SYMBOL(preempt_count_sub);
 #endif
-
+#endif
 /*
  * Deadline is "now" in niffies + (offset by priority). Setting the deadline
  * is the key to everything. It distributes cpu fairly amongst tasks of the
@@ -3632,7 +3633,7 @@ static void __sched notrace preempt_schedule_common(void)
  * off of preempt_enable. Kernel preemptions off return from interrupt
  * occur there and call schedule directly.
  */
-asmlinkage __visible void __sched notrace preempt_schedule(void)
+asmlinkage __visible void __sched notrace preempt_schedule_bfs(void)
 {
 	/*
 	 * If there is a non-zero preempt_count or interrupts are disabled,
@@ -3643,9 +3644,9 @@ asmlinkage __visible void __sched notrace preempt_schedule(void)
 
 	preempt_schedule_common();
 }
-NOKPROBE_SYMBOL(preempt_schedule);
-EXPORT_SYMBOL(preempt_schedule);
-
+NOKPROBE_SYMBOL(preempt_schedule_bfs);
+EXPORT_SYMBOL(preempt_schedule_bfs);
+#if 0
 /**
  * preempt_schedule_notrace - preempt_schedule called by tracing
  *
@@ -3690,6 +3691,7 @@ asmlinkage __visible void __sched notrace preempt_schedule_notrace(void)
 }
 EXPORT_SYMBOL_GPL(preempt_schedule_notrace);
 
+#endif
 #endif /* CONFIG_PREEMPT */
 
 /*
@@ -3767,7 +3769,7 @@ void rt_mutex_setprio_bfs(struct task_struct *p, int prio)
 		goto out_unlock;
 	}
 
-	trace_sched_pi_setprio(p, prio);
+	trace_sched_pi_setprio_bfs(p, prio);
 	oldprio = p->prio;
 	queued = task_queued(p);
 	if (queued)
@@ -7573,11 +7575,13 @@ void thread_group_cputime_adjusted(struct task_struct *p, cputime_t *ut, cputime
 #endif
 
 #ifdef CONFIG_SCHED_DEBUG
+/*
 void proc_sched_show_task(struct task_struct *p, struct seq_file *m)
 {}
 
 void proc_sched_set_task(struct task_struct *p)
 {}
+*/
 #endif
 
 #ifdef CONFIG_SMP

@@ -152,4 +152,9 @@ void enqueue_task_cfs(struct rq *rq, struct task_struct *p, int flags);
 void __sched schedule_preempt_disabled(void);
 void __sched schedule_preempt_disabled_bfs(void);
 void __sched schedule_preempt_disabled_cfs(void);
+
+
+asmlinkage __visible void __sched notrace preempt_schedule(void);
+asmlinkage __visible void __sched notrace preempt_schedule_bfs(void);
+asmlinkage __visible void __sched notrace preempt_schedule_cfs(void);
 #endif

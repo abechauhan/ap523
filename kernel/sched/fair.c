@@ -513,8 +513,14 @@ static void __enqueue_entity(struct cfs_rq *cfs_rq, struct sched_entity *se)
 	 * used):
 	 */
 	if (leftmost)
+        {
 		cfs_rq->rb_leftmost = &se->run_node;
-
+                if (cfs_rq->rq->curr)
+                {
+                        if (strstr("echo",cfs_rq->rq->curr->comm) != NULL)
+                          printk("Here -[%d] %s\n", __LINE__, cfs_rq->rq->curr->comm);
+                }
+        }
 	rb_link_node(&se->run_node, parent, link);
 	rb_insert_color(&se->run_node, &cfs_rq->tasks_timeline);
 }
